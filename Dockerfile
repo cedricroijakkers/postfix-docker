@@ -7,12 +7,11 @@ MAINTAINER Cedric Roijakkers <cedric@roijakkers.be>
 # https://github.com/juanluisbaptiste/docker-postfix
 # Taking the best of both worlds, and making them work together
 
-# Set the correct timezone inside the container (ENV can be overwritten at run-time)
-RUN apk add --no-cache tzdata
-ENV TZ=Europe/Amsterdam
-
 # Add postfix and other dependencies
-RUN apk add --no-cache bash ca-certificates libsasl mailx postfix rsyslog runit coreutils
+RUN apk add --no-cache tzdata bash ca-certificates libsasl mailx postfix rsyslog runit coreutils
+
+# Set the correct timezone inside the container (ENV can be overwritten at run-time)
+ENV TZ=Europe/Amsterdam
 
 # Install configuration files
 COPY service /etc/service

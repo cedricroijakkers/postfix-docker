@@ -24,5 +24,5 @@ RUN ln -sf /dev/stdout /var/log/mail.log
 STOPSIGNAL SIGKILL
 
 # Run the application
-RUN chmod +x /usr/sbin/runit_bootstrap
+RUN chmod +x /usr/sbin/runit_bootstrap /etc/service/*/run
 ENTRYPOINT ["/usr/sbin/runit_bootstrap"]

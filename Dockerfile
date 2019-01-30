@@ -26,3 +26,5 @@ STOPSIGNAL SIGKILL
 # Run the application
 RUN chmod +x /usr/sbin/runit_bootstrap /etc/service/*/run
 ENTRYPOINT ["/usr/sbin/runit_bootstrap"]
+
+EXPOSE 25

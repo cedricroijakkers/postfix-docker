@@ -4,12 +4,6 @@ set -e
 # Avoid  warning: smtputf8_enable is true, but EAI support is not compiled in
 echo "smtputf8_enable = no" >> /etc/postfix/main.cf
 
-cat >> /etc/postfix/main.cf << EOF
-# limit smtp to loopback interface & compute engine doesn't support ipv6
-inet_interfaces = loopback-only
-inet_protocols = ipv4
-EOF
-
 # Do we want to modify the config first with the script?
 # shellcheck disable=SC1091
 [ -f /etc/service/postfix/run.config ] && source /etc/service/postfix/run.config

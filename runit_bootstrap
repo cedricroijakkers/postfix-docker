@@ -22,10 +22,10 @@ function add_config_value() {
   if [ $property_hits -eq 0 ]
   then
 	print_log 'Adding configuration option "'${key}'" with value: "'${value}'"'
-	sed -i -e 's/^${key}.*/${key} = ${value}/g' /etc/postfix/main.cf
+	echo "${key} = ${value}" >> $config_file
   else
 	print_log 'Replacing configuration option "'${key}'" with value: "'${value}'"'
-	echo "${key} = ${value}" >> $config_file
+    sed -i -e 's/^${key}.*/${key} = ${value}/g' $config_file
   fi
 }
 
@@ -37,13 +37,16 @@ function add_config_value() {
 SMTP_PORT="${SMTP_PORT-25}"
 
 # Set needed config options
+add_config_value "inet_protocols" "ipv4"
+add_config_value "inet_interfaces" "all"
+add_config_value "mynetworks" "0.0.0.0/0"
 add_config_value "myhostname" ${SERVER_HOSTNAME}
 add_config_value "mydestination" '$myhostname'
 add_config_value "myorigin" '$myhostname'
 add_config_value "relayhost" "[${SMTP_SERVER}]:${SMTP_PORT}"
 add_config_value "smtp_use_tls" "yes"
 add_config_value "smtp_sasl_auth_enable" "yes"
-add_config_value "smtp_sasl_password_maps" "hash:\/etc\/postfix\/sasl_passwd"
+add_config_value "smtp_sasl_password_maps" "hash:/etc/postfix/sasl_passwd"
 add_config_value "smtp_sasl_security_options" "noanonymous"
 
 # Create sasl_passwd file with auth credentials
@@ -62,5 +65,8 @@ if [ ! -z "${SMTP_HEADER_TAG}" ]; then
   echo -e "/^MIME-Version:/i PREPEND RelayTag: $SMTP_HEADER_TAG\n/^Content-Transfer-Encoding:/i PREPEND RelayTag: $SMTP_HEADER_TAG" > /etc/postfix/header_tag
   print_log "Setting configuration option SMTP_HEADER_TAG with value: ${SMTP_HEADER_TAG}"
 fi
+
+# Generate aliases.db
+newaliases
 
 exec /sbin/runsvdir /etc/service

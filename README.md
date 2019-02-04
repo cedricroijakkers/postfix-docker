@@ -7,18 +7,18 @@ This container runs the postfix mail server, and is a combination of the followi
 It combines both into one, using the alpine base and logging from the first container; and the configuration properties from the second.
 
 # How to run it
-
 The following env variables need to be passed to the container:
 
 * `SMTP_SERVER` Server address of the SMTP server to use.
-* `SMTP_PORT` (Optional, Default value: 587) Port address of the SMTP server to use.
 * `SMTP_USERNAME` Username to authenticate with.
 * `SMTP_PASSWORD` Password of the SMTP user.
 * `SERVER_HOSTNAME` Server hostname for the Postfix container. Emails will appear to come from the hostname's domain.
 
 The following env variable(s) are optional.
 
-* `SMTP_HEADER_TAG` This will add a header for tracking messages upstream. Helpful for spam filters. Will appear as "RelayTag: ${SMTP_HEADER_TAG}" in the email headers.
+* `SMTP_PORT` (Optional, Default value: 587) Port address of the SMTP server to use.
+* `RECIPIENT_LIMIT` (Optional, Default value: 1000) Maximum number of recipients per mail.
+* `SMTP_HEADER_TAG` When set, will add a header for tracking messages upstream. Helpful for spam filters. Will appear as `RelayTag: ${SMTP_HEADER_TAG}` in the email headers.
 
 To use this container from anywhere, the 25 port needs to be exposed to the docker host server:
 

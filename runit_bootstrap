@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 [ "${DEBUG}" == "yes" ] && set -x
 
@@ -29,15 +29,15 @@ function add_config_value() {
   fi
 }
 
+# Required configuration variables
 [ -z "${SMTP_SERVER}" ] && echo "SMTP_SERVER is not set" && exit 1
-[ -z "${SMTP_USERNAME}" ] && echo "SMTP_USERNAME is not set" && exit 1
-[ -z "${SMTP_PASSWORD}" ] && echo "SMTP_PASSWORD is not set" && exit 1
 [ -z "${SERVER_HOSTNAME}" ] && echo "SERVER_HOSTNAME is not set" && exit 1
 
+# Default configuration variables that can be overwritten
 SMTP_PORT="${SMTP_PORT-25}"
 RECIPIENT_LIMIT="${RECIPIENT_LIMIT-1000}"
 
-# Set needed config options
+# Set needed config options in main.cf
 add_config_value "inet_protocols" "ipv4"
 add_config_value "inet_interfaces" "all"
 add_config_value "mynetworks" "0.0.0.0/0"
@@ -47,21 +47,25 @@ add_config_value "myorigin" '$myhostname'
 add_config_value "relayhost" "[${SMTP_SERVER}]:${SMTP_PORT}"
 add_config_value "smtpd_recipient_limit" ${RECIPIENT_LIMIT}
 add_config_value "smtp_use_tls" "yes"
-add_config_value "smtp_sasl_auth_enable" "yes"
-add_config_value "smtp_sasl_password_maps" "hash:/etc/postfix/sasl_passwd"
-add_config_value "smtp_sasl_security_options" "noanonymous"
 
-# Create sasl_passwd file with auth credentials
-if [ ! -f /etc/postfix/sasl_passwd ]; then
-  grep -q "${SMTP_SERVER}" /etc/postfix/sasl_passwd  > /dev/null 2>&1
-  if [ $? -gt 0 ]; then
-    print_log "Adding SASL authentication configuration."
-    echo "[${SMTP_SERVER}]:${SMTP_PORT} ${SMTP_USERNAME}:${SMTP_PASSWORD}" >> /etc/postfix/sasl_passwd
-    postmap /etc/postfix/sasl_passwd
+# Optional: when SMTP_USERNAME and SMTP_PASSWORD are provided, create a sasl_passwd file and add it to the Postfix configuration
+if [ -n "${SMTP_USERNAME}" -a -n "${SMTP_PASSWORD}" ]
+then
+  if [ ! -f /etc/postfix/sasl_passwd ]; then
+    grep -q "${SMTP_SERVER}" /etc/postfix/sasl_passwd  > /dev/null 2>&1
+    if [ $? -gt 0 ]; then
+      print_log "Adding SASL authentication configuration."
+      echo "[${SMTP_SERVER}]:${SMTP_PORT} ${SMTP_USERNAME}:${SMTP_PASSWORD}" >> /etc/postfix/sasl_passwd
+      postmap /etc/postfix/sasl_passwd
+    fi
   fi
+
+  add_config_value "smtp_sasl_auth_enable" "yes"
+  add_config_value "smtp_sasl_password_maps" "hash:/etc/postfix/sasl_passwd"
+  add_config_value "smtp_sasl_security_options" "noanonymous"
 fi
 
-#Set header tag  
+# Optional: set header tag  
 if [ ! -z "${SMTP_HEADER_TAG}" ]; then
   postconf -e "header_checks = regexp:/etc/postfix/header_tag"
   echo -e "/^MIME-Version:/i PREPEND RelayTag: $SMTP_HEADER_TAG\n/^Content-Transfer-Encoding:/i PREPEND RelayTag: $SMTP_HEADER_TAG" > /etc/postfix/header_tag
@@ -71,4 +75,5 @@ fi
 # Generate aliases.db
 newaliases
 
+# Start postfix
 exec /sbin/runsvdir /etc/service

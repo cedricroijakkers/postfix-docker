@@ -29,7 +29,7 @@ To configure an upstream server without authentication:
     docker run -d --name postfix -p "25:25"  \ 
            -e SMTP_SERVER=smtp.bar.com \
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
-           cedricroijakkers/postfix:3.4.5
+           cedricroijakkers/postfix-docker:3.4.5
 
 To configure an upstream server with authentication:
 
@@ -38,7 +38,7 @@ To configure an upstream server with authentication:
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
            -e SMTP_USERNAME=foo@bar.com \
            -e SMTP_PASSWORD=XXXXXXXX \
-           cedricroijakkers/postfix:3.4.5
+           cedricroijakkers/postfix-docker:3.4.5
 
 # Maintainer
 This container is built and maintained by [Cedric Roijakkers](mailto:cedric@roijakkers.be).

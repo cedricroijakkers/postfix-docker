@@ -21,6 +21,7 @@ The following env variable(s) are optional.
 * `SMTP_PORT`: (Default value: 25) Port number of the upstream SMTP server to use.
 * `RECIPIENT_LIMIT`: (Default value: 1000) Maximum number of recipients per mail.
 * `SMTP_HEADER_TAG`: When set, will add a header for tracking messages upstream. Helpful for spam filters. Will appear as `RelayTag: ${SMTP_HEADER_TAG}` in the email headers.
+* `REWRITE_DOMAIN`: When set, will change the part behind the `@` character in all from-adresses to the specified domain, this is handy when your upstream server requires mails to be sent from a specific domain only (do not add the `@` character itself).
 
 To use this container from anywhere, the 25 port needs to be exposed to the docker host server:
 
@@ -29,7 +30,7 @@ To configure an upstream server without authentication:
     docker run -d --name postfix -p "25:25"  \ 
            -e SMTP_SERVER=smtp.bar.com \
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
-           cedricroijakkers/postfix-docker:3.4.5
+           cedricroijakkers/postfix-docker:3.4.7
 
 To configure an upstream server with authentication:
 
@@ -38,7 +39,7 @@ To configure an upstream server with authentication:
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
            -e SMTP_USERNAME=foo@bar.com \
            -e SMTP_PASSWORD=XXXXXXXX \
-           cedricroijakkers/postfix-docker:3.4.5
+           cedricroijakkers/postfix-docker:3.4.7
 
 # Maintainer
 This container is built and maintained by [Cedric Roijakkers](mailto:cedric@roijakkers.be).

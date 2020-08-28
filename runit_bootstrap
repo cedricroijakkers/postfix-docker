@@ -65,11 +65,18 @@ then
   add_config_value "smtp_sasl_security_options" "noanonymous"
 fi
 
-# Optional: set header tag  
+# Optional: set header tag
 if [ ! -z "${SMTP_HEADER_TAG}" ]; then
   postconf -e "header_checks = regexp:/etc/postfix/header_tag"
   echo -e "/^MIME-Version:/i PREPEND RelayTag: $SMTP_HEADER_TAG\n/^Content-Transfer-Encoding:/i PREPEND RelayTag: $SMTP_HEADER_TAG" > /etc/postfix/header_tag
   print_log "Setting configuration option SMTP_HEADER_TAG with value: ${SMTP_HEADER_TAG}"
+fi
+
+# Optional: rewrite outgoing domain in from-addresses
+if [ ! -z "${REWRITE_DOMAIN}" ]; then
+  echo -e '/^(.*@).*$/     ${1}'${REWRITE_DOMAIN} >> /etc/postfix/sender_canonical
+  add_config_value "sender_canonical_maps" "regexp:/etc/postfix/sender_canonical"
+  print_log "Setting configuration option REWRITE_DOMAIN with value: ${REWRITE_DOMAIN}"
 fi
 
 # Generate aliases.db

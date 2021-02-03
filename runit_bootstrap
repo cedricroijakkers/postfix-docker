@@ -74,9 +74,16 @@ fi
 
 # Optional: rewrite outgoing domain in from-addresses
 if [ ! -z "${REWRITE_DOMAIN}" ]; then
-  echo -e '/^(.*@).*$/     ${1}'${REWRITE_DOMAIN} >> /etc/postfix/sender_canonical
+  echo -e '/^(.*@).*$/     ${1}'${REWRITE_DOMAIN} > /etc/postfix/sender_canonical
   add_config_value "sender_canonical_maps" "regexp:/etc/postfix/sender_canonical"
   print_log "Setting configuration option REWRITE_DOMAIN with value: ${REWRITE_DOMAIN}"
+fi
+
+# Optional: rewrite From-headers
+if [ ! -z "${REWRITE_HEADERS}" ]; then
+  echo -e "${REWRITE_HEADERS}" > /etc/postfix/header_checks
+  add_config_value "smtp_header_checks" "regexp:/etc/postfix/header_checks"
+  print_log "Setting configuration option REWRITE_HEADERS with value: ${REWRITE_HEADERS}"
 fi
 
 # Generate aliases.db

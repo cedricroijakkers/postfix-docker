@@ -22,6 +22,7 @@ The following env variable(s) are optional.
 * `RECIPIENT_LIMIT`: (Default value: 1000) Maximum number of recipients per mail.
 * `SMTP_HEADER_TAG`: When set, will add a header for tracking messages upstream. Helpful for spam filters. Will appear as `RelayTag: ${SMTP_HEADER_TAG}` in the email headers.
 * `REWRITE_DOMAIN`: When set, will change the part behind the `@` character in all from-adresses to the specified domain, this is handy when your upstream server requires mails to be sent from a specific domain only (do not add the `@` character itself).
+* `REWRITE_HEADERS`: When set, will apply the regular expression(s) to all headers of all passing mails, enter the full regular expression; use seperator `\n` if you wish to apply multiple regexes (be sure to escape `$` with `\$` when using backreferences since this is an environment variable!)
 
 To use this container from anywhere, the 25 port needs to be exposed to the docker host server:
 

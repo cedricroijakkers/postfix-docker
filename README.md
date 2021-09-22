@@ -24,7 +24,35 @@ The following env variable(s) are optional.
 * `REWRITE_DOMAIN`: When set, will change the part behind the `@` character in all from-adresses to the specified domain, this is handy when your upstream server requires mails to be sent from a specific domain only (do not add the `@` character itself).
 * `REWRITE_HEADERS`: When set, will apply the regular expression(s) to all headers of all passing mails, enter the full regular expression; use seperator `\n` if you wish to apply multiple regexes (be sure to escape `$` with `\$` when using backreferences since this is an environment variable!)
 
-To use this container from anywhere, the 25 port needs to be exposed to the docker host server:
+# Adding arbitrary configuration properties
+If the configuration options in the environment variables above do not suit your needs, you can specify a shell script which you can mount in the container that changes the postfix configuration file as much as you like.
+There is a function in the `runit` file `add_config_value` that you can use fo this. Call it as follows:
+
+```shell
+add_config_value "key" "value"
+```
+
+For example:
+```shell
+add_config_value "smtp_use_tls" "yes"
+```
+
+To activate this option, mount a shell script in the container in a place of your liking, and specify the location of the script in the environment variable `ADDITIONAL_CONFIG`:
+
+    docker run -d --name postfix -p "25:25"  \ 
+           -e SMTP_SERVER=smtp.bar.com \
+           -e SERVER_HOSTNAME=helpdesk.mycompany.com \
+           -e ADDITIONAL_CONFIG=/tmp/additional_config.sh \
+           -v /path/to/addition_config.sh:/tmp/additional_config.sh \
+           cedricroijakkers/postfix-docker:3.4.7
+
+It will be loaded and fully executed at container boot time. You can use any command in there, but it is recommended to stick to `add_config_value` as this will automatically replace any existing configuration value with the same name in the postfix configuration file.
+
+WARNING: This will execute the script as-is without checking any contents of it. Be sure to use it wisely!
+
+# Starting the container
+
+To use this container from anywhere, port 25 needs to be exposed to the docker host server:
 
 To configure an upstream server without authentication:
 

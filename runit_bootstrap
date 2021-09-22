@@ -86,6 +86,11 @@ if [ ! -z "${REWRITE_HEADERS}" ]; then
   print_log "Setting configuration option REWRITE_HEADERS with value: ${REWRITE_HEADERS}"
 fi
 
+# Optional: if a script is set in variable ADDITIONAL_CONFIG, source and execute it
+if [ ! -z "${ADDITIONAL_CONFIG}" -a -s "${ADDITIONAL_CONFIG}" ]; then
+  . "${ADDITIONAL_CONFIG}"
+fi
+
 # Generate aliases.db
 newaliases
 

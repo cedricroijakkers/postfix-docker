@@ -2,39 +2,37 @@
 
 [ "${DEBUG}" == "yes" ] && set -x
 
-function print_log() {
-  local date_time=`date '+%Y-%m-%dT%H:%M:%S.%N%:z'`
-  local host_name=`hostname`
-  local process_name="runit_bootstrap"
-  local pid=$$
-  local message=$1
+print_log() {
+  date_time=$(date '+%Y-%m-%dT%H:%M:%S.%N%:z')
+  host_name=$(hostname)
+  process_name="runit_bootstrap"
+  pid=$$
+  message=$1
   
   echo "${date_time} ${host_name} ${process_name}[${pid}]: ${message}"
 }
 
-function add_config_value() {
-  local key=${1}
-  local value=${2}
-  local config_file=${3:-/etc/postfix/main.cf}
-  [ "${key}" == "" ] && echo "ERROR: No key set !!" && exit 1
-  [ "${value}" == "" ] && echo "ERROR: No value set !!" && exit 1
-  local property_hits=`grep -v '^#' $config_file | grep -c $key`
+add_config_value() {
+  key=${1}
+  value=${2}
+  config_file=${3:-/etc/postfix/main.cf}
+  [ "${key}" = "" ] && echo "ERROR: No key set !!" && exit 1
+  [ "${value}" = "" ] && echo "ERROR: No value set !!" && exit 1
+  property_hits=$(grep -v '^#' "$config_file" | grep -c $key)
   if [ $property_hits -eq 0 ]
   then
-	print_log 'Adding configuration option "'${key}'" with value: "'${value}'"'
-	echo "${key} = ${value}" >> $config_file
+	  print_log 'Adding configuration option "'"${key}"'" with value: "'"${value}"'"'
+	  echo "${key} = ${value}" >> "$config_file"
   else
-	print_log 'Replacing configuration option "'${key}'" with value: "'${value}'"'
-    sed -i -e 's/^${key}.*/${key} = ${value}/g' $config_file
+	  print_log 'Replacing configuration option "'"${key}"'" with value: "'"${value}"'"'
+    sed -i -e "s/^${key}.*/${key} = ${value}/g" "$config_file"
   fi
 }
 
-# Required configuration variables
-[ -z "${SMTP_SERVER}" ] && echo "SMTP_SERVER is not set" && exit 1
-[ -z "${SERVER_HOSTNAME}" ] && echo "SERVER_HOSTNAME is not set" && exit 1
+# Required configuration variable(s)
+[ -z "${SERVER_HOSTNAME}" ] && echo "ERROR: SERVER_HOSTNAME is not set" && exit 1
 
-# Default configuration variables that can be overwritten
-SMTP_PORT="${SMTP_PORT-25}"
+# Default configuration variable(s) that can be overwritten
 RECIPIENT_LIMIT="${RECIPIENT_LIMIT-1000}"
 
 # Set needed config options in main.cf
@@ -44,16 +42,24 @@ add_config_value "mynetworks" "0.0.0.0/0"
 add_config_value "myhostname" ${SERVER_HOSTNAME}
 add_config_value "mydestination" '$myhostname'
 add_config_value "myorigin" '$myhostname'
-add_config_value "relayhost" "[${SMTP_SERVER}]:${SMTP_PORT}"
 add_config_value "smtpd_recipient_limit" ${RECIPIENT_LIMIT}
 add_config_value "smtp_use_tls" "yes"
 
-# Optional: when SMTP_USERNAME and SMTP_PASSWORD are provided, create a sasl_passwd file and add it to the Postfix configuration
-if [ -n "${SMTP_USERNAME}" -a -n "${SMTP_PASSWORD}" ]
+# Optional: Use a single relay host for all outgoing mail
+if [ -n "${SMTP_SERVER}" ]
 then
-  if [ ! -f /etc/postfix/sasl_passwd ]; then
+  SMTP_PORT="${SMTP_PORT-25}"
+  add_config_value "relayhost" "[${SMTP_SERVER}]:${SMTP_PORT}"
+fi
+
+# Optional: when SMTP_USERNAME and SMTP_PASSWORD are provided, create a sasl_passwd file and add it to the Postfix configuration
+if [ -n "${SMTP_USERNAME}" ] && [ -n "${SMTP_PASSWORD}" ]
+then
+  if [ ! -f /etc/postfix/sasl_passwd ]
+  then
     grep -q "${SMTP_SERVER}" /etc/postfix/sasl_passwd  > /dev/null 2>&1
-    if [ $? -gt 0 ]; then
+    if [ $? -gt 0 ]
+    then
       print_log "Adding SASL authentication configuration."
       echo "[${SMTP_SERVER}]:${SMTP_PORT} ${SMTP_USERNAME}:${SMTP_PASSWORD}" >> /etc/postfix/sasl_passwd
       postmap /etc/postfix/sasl_passwd
@@ -66,28 +72,63 @@ then
 fi
 
 # Optional: set header tag
-if [ ! -z "${SMTP_HEADER_TAG}" ]; then
+if [ -n "${SMTP_HEADER_TAG}" ]
+then
   postconf -e "header_checks = regexp:/etc/postfix/header_tag"
   echo -e "/^MIME-Version:/i PREPEND RelayTag: $SMTP_HEADER_TAG\n/^Content-Transfer-Encoding:/i PREPEND RelayTag: $SMTP_HEADER_TAG" > /etc/postfix/header_tag
   print_log "Setting configuration option SMTP_HEADER_TAG with value: ${SMTP_HEADER_TAG}"
 fi
 
 # Optional: rewrite outgoing domain in from-addresses
-if [ ! -z "${REWRITE_DOMAIN}" ]; then
-  echo -e '/^(.*@).*$/     ${1}'${REWRITE_DOMAIN} > /etc/postfix/sender_canonical
+if [ -n "${REWRITE_DOMAIN}" ]
+then
+  echo -e '/^(.*@).*$/     ${1}'"${REWRITE_DOMAIN}" > /etc/postfix/sender_canonical
   add_config_value "sender_canonical_maps" "regexp:/etc/postfix/sender_canonical"
   print_log "Setting configuration option REWRITE_DOMAIN with value: ${REWRITE_DOMAIN}"
 fi
 
 # Optional: rewrite From-headers
-if [ ! -z "${REWRITE_HEADERS}" ]; then
+if [ -n "${REWRITE_HEADERS}" ]
+then
   echo -e "${REWRITE_HEADERS}" > /etc/postfix/header_checks
   add_config_value "smtp_header_checks" "regexp:/etc/postfix/header_checks"
   print_log "Setting configuration option REWRITE_HEADERS with value: ${REWRITE_HEADERS}"
 fi
 
+# Optional: DKIM configuration
+if [ -n "${DKIM_DOMAIN}" ] && [ -n "${DKIM_KEY}" ] && [ -s "${DKIM_KEY}" ] && [ -n "${DKIM_SELECTOR}" ]
+then
+  print_log "Enabling OpenDKIM server"
+  install -d -o opendkim -g opendkim /run/opendkim
+  chown opendkim:opendkim "${DKIM_KEY}"
+  chmod 600 "${DKIM_KEY}"
+  cat <<EOF > /etc/opendkim/opendkim.conf
+BaseDirectory       /run/opendkim
+Syslog              yes
+SyslogSuccess       yes
+Canonicalization    relaxed/simple
+Mode                s
+Domain              ${DKIM_DOMAIN}
+Selector            ${DKIM_SELECTOR}
+KeyFile             ${DKIM_KEY}
+Socket              inet:8891@localhost
+ReportAddress       postmaster@${DKIM_DOMAIN}
+SendReports         no
+InternalHosts       0.0.0.0/0
+DNSTimeout          5
+SignatureAlgorithm  rsa-sha256
+OversignHeaders     From
+UserID              opendkim
+EOF
+  add_config_value "milter_default_action" "accept"
+  add_config_value "milter_protocol" "6"
+  add_config_value "smtpd_milters" "inet:localhost:8891"
+  add_config_value "non_smtpd_milters" '$smtpd_milters'
+fi
+
 # Optional: if a script is set in variable ADDITIONAL_CONFIG, source and execute it
-if [ ! -z "${ADDITIONAL_CONFIG}" -a -s "${ADDITIONAL_CONFIG}" ]; then
+if [ -n "${ADDITIONAL_CONFIG}" ] && [ -s "${ADDITIONAL_CONFIG}" ]
+then
   . "${ADDITIONAL_CONFIG}"
 fi
 

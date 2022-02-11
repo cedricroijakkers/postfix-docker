@@ -1,4 +1,4 @@
-FROM alpine:3.10.9
+FROM alpine:3.15.0
 
 LABEL maintainer="Cedric Roijakkers <cedric@roijakkers.be>"
 
@@ -8,26 +8,28 @@ LABEL maintainer="Cedric Roijakkers <cedric@roijakkers.be>"
 # Taking the best of both worlds, and making them work together
 
 # Add postfix and other dependencies
-RUN apk update && apk add --no-cache tzdata ca-certificates libsasl postfix rsyslog runit coreutils cyrus-sasl-plain \
-cyrus-sasl-openrc cyrus-sasl-gs2 cyrus-sasl-scram cyrus-sasl-digestmd5 cyrus-sasl-login cyrus-sasl-crammd5
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache tzdata ca-certificates libsasl postfix rsyslog runit coreutils cyrus-sasl cyrus-sasl-crammd5 \
+    cyrus-sasl-digestmd5 cyrus-sasl-gs2 cyrus-sasl-gssapiv2 cyrus-sasl-login cyrus-sasl-ntlm cyrus-sasl-openrc \
+    cyrus-sasl-scram cyrus-sasl-static opendkim opendkim-utils
 
-# Set the correct timezone inside the container (ENV can be overwritten at run-time)
-ENV TZ=Europe/Amsterdam
-
-# Install configuration files
+# Install runit configuration files
 COPY service /etc/service
 COPY runit_bootstrap /usr/sbin/runit_bootstrap
+# And the syslog configuration file
 COPY rsyslog.conf /etc/rsyslog.conf
 
-# Make sure the logging goes to docker
-RUN ln -sf /dev/stdout /var/log/mail.log
+# Send all application logging to stdout, so it can be logged by Docker
+RUN ln -sf /dev/stdout /var/log/mail.log && \
+# And fix the permissions of the runit scripts
+    chmod +x /usr/sbin/runit_bootstrap /etc/service/*/run
 
 # The Docker stop signal
 STOPSIGNAL SIGKILL
 
-# Run the application
-RUN chmod +x /usr/sbin/runit_bootstrap /etc/service/*/run
-ENTRYPOINT ["/usr/sbin/runit_bootstrap"]
+# Run the application(s) with runit
+CMD ["/usr/sbin/runit_bootstrap"]
 
 # Expose port 25 (SMTP)
 EXPOSE 25

@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+# Run opendkim, but only if all environment variables are set
+if [ -n "${DKIM_DOMAIN}" -a -n "${DKIM_KEY}" -a -n "${DKIM_SELECTOR}" ]
+then
+  /usr/sbin/opendkim -f
+fi

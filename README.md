@@ -56,7 +56,7 @@ To activate this option, mount a shell script in the container in a place of you
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
            -e ADDITIONAL_CONFIG=/tmp/additional_config.sh \
            -v /path/to/addition_config.sh:/tmp/additional_config.sh \
-           cedricroijakkers/postfix-docker:3.6.4
+           cedricroijakkers/postfix-docker:3.6.6
 
 It will be loaded and fully executed at container boot time. You can use any command in there, but it is recommended to stick to `add_config_value` as this will automatically replace any existing configuration value with the same name in the postfix configuration file.
 
@@ -70,7 +70,7 @@ To configure the mail server to relay mails directly, without any special config
 
     docker run -d --name postfix -p "25:25"  \
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
-           cedricroijakkers/postfix-docker:3.6.4
+           cedricroijakkers/postfix-docker:3.6.6
 
 To configure the mail server to relay mails directly, and sign them for domain `helpdesk.mycompany.com` with DKIM selector `sel1` (be sure to add the required DNS records to avoid mails ending up in the SPAM folder!):
 
@@ -80,14 +80,14 @@ To configure the mail server to relay mails directly, and sign them for domain `
            -e DKIM_KEY=/var/db/dkim/helpdesk.mycompany.com.private \
            -e DKIM_SELECTOR=sel1 \
            -v /path/to/helpdesk.mycompany.com.private:/var/db/dkim/helpdesk.mycompany.com.private \
-           cedricroijakkers/postfix-docker:3.6.4
+           cedricroijakkers/postfix-docker:3.6.6
 
 To configure an upstream server without authentication:
 
     docker run -d --name postfix -p "25:25"  \ 
            -e SMTP_SERVER=smtp.bar.com \
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
-           cedricroijakkers/postfix-docker:3.6.4
+           cedricroijakkers/postfix-docker:3.6.6
 
 To configure an upstream server with authentication:
 
@@ -96,7 +96,7 @@ To configure an upstream server with authentication:
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
            -e SMTP_USERNAME=foo@bar.com \
            -e SMTP_PASSWORD=XXXXXXXX \
-           cedricroijakkers/postfix-docker:3.6.4
+           cedricroijakkers/postfix-docker:3.6.6
 
 # Maintainer
 This container is built and maintained by [Cedric Roijakkers](mailto:cedric@roijakkers.be).

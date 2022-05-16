@@ -16,8 +16,8 @@ add_config_value() {
   key=${1}
   value=${2}
   config_file=${3:-/etc/postfix/main.cf}
-  [ "${key}" = "" ] && echo "ERROR: No key set !!" && exit 1
-  [ "${value}" = "" ] && echo "ERROR: No value set !!" && exit 1
+  [ "${key}" = "" ] && echo "ERROR: No key set!" && exit 1
+  [ "${value}" = "" ] && echo "WARNING: No value set for key ${key}!"
   property_hits=$(grep -v '^#' "$config_file" | grep -c $key)
   if [ $property_hits -eq 0 ]
   then

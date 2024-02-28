@@ -19,7 +19,7 @@ The following env variable is mandatory to be passed to the container:
 This will start the mail server with the specified hostname on port 25 with a maximum of 1000 recipients per mail.
 
 These two parameters can be changed with the following environment variables:
-* `SMTP_PORT`: (Default value: 25) Port number of the upstream SMTP server to use.
+* `SMTP_PORT`: (Default value: 25) Port number of the upstream SMTP server to use. (If set to 465 for SMTPS, this will automatically trigger options `smtp_tls_wrappermode = yes` and `smtp_tls_security_level = encrypt`).
 * `RECIPIENT_LIMIT`: (Default value: 1000) Maximum number of recipients per mail.
 
 If you wish to enable header rewriting, the following environment variables can be used:

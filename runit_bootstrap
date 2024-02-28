@@ -50,6 +50,14 @@ if [ -n "${SMTP_SERVER}" ]
 then
   SMTP_PORT="${SMTP_PORT-25}"
   add_config_value "relayhost" "[${SMTP_SERVER}]:${SMTP_PORT}"
+
+  # Detect SMTPS port 465, and set required parameters accordingly
+  if [ "${SMTP_PORT}" = "465" ]
+  then
+    print_log "Detected SMTPS port 465, setting smtp_tls_wrappermode = yes and smtp_tls_security_level = encrypt."
+    add_config_value "smtp_tls_wrappermode" "yes"
+    add_config_value "smtp_tls_security_level" "encrypt"
+  fi
 fi
 
 # Optional: when SMTP_USERNAME and SMTP_PASSWORD are provided, create a sasl_passwd file and add it to the Postfix configuration
@@ -67,7 +75,7 @@ then
   fi
 
   add_config_value "smtp_sasl_auth_enable" "yes"
-  add_config_value "smtp_sasl_password_maps" "hash:/etc/postfix/sasl_passwd"
+  add_config_value "smtp_sasl_password_maps" "lmdb:/etc/postfix/sasl_passwd"
   add_config_value "smtp_sasl_security_options" "noanonymous"
 fi
 

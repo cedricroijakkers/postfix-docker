@@ -1,4 +1,4 @@
-FROM alpine:3.15.4
+FROM alpine:3.19.1
 
 LABEL maintainer="Cedric Roijakkers <cedric@roijakkers.be>"
 

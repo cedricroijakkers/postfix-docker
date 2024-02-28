@@ -37,6 +37,9 @@ If you wish to use an upstream server to send the mails, the following environme
 * `SMTP_USERNAME`: Username to authenticate with.
 * `SMTP_PASSWORD`: Password of the SMTP user.
 
+If you wish to use a custom queue directory, i.e. mounting this outside of the docker container:
+* `QUEUE_DIRECTORY`: Path (relative to the container) of a directory to store the mail queue
+
 # Adding arbitrary configuration properties
 If the configuration options in the environment variables above do not suit your needs, you can specify a shell script which you can mount in the container that changes the postfix configuration file as much as you like.
 There is a function in the `runit` file `add_config_value` that you can use fo this. Call it as follows:
@@ -52,11 +55,11 @@ add_config_value "smtp_use_tls" "yes"
 
 To activate this option, mount a shell script in the container in a place of your liking, and specify the location of the script in the environment variable `ADDITIONAL_CONFIG`:
 
-    docker run -d --name postfix -p "25:25"  \
+    docker run -d --name postfix -p "25:25" \
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
            -e ADDITIONAL_CONFIG=/tmp/additional_config.sh \
            -v /path/to/addition_config.sh:/tmp/additional_config.sh \
-           cedricroijakkers/postfix-docker:3.6.6
+           cedricroijakkers/postfix-docker:3.8.5
 
 It will be loaded and fully executed at container boot time. You can use any command in there, but it is recommended to stick to `add_config_value` as this will automatically replace any existing configuration value with the same name in the postfix configuration file.
 
@@ -68,35 +71,45 @@ Here are some examples to use the mail server in various use cases:
 
 To configure the mail server to relay mails directly, without any special configuration:
 
-    docker run -d --name postfix -p "25:25"  \
+    docker run -d --name postfix -p "25:25" \
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
-           cedricroijakkers/postfix-docker:3.6.6
+           cedricroijakkers/postfix-docker:3.8.5
+
+To configure the mail server with an external queue directory:
+
+Create a directory `/home/postfix/queue` on your host OS (make sure this is owned by UID:GID `102:102`), and then start the container as follows:
+
+    docker run -d --name postfix -p "25:25" \
+           -e SERVER_HOSTNAME=helpdesk.mycompany.com \
+           -e QUEUE_DIRECTORY=/data/postfix \
+           -v /home/postfix/queue/data/postfix: \
+           cedricroijakkers/postfix-docker:3.8.5
 
 To configure the mail server to relay mails directly, and sign them for domain `helpdesk.mycompany.com` with DKIM selector `sel1` (be sure to add the required DNS records to avoid mails ending up in the SPAM folder!):
 
-    docker run -d --name postfix -p "25:25"  \
+    docker run -d --name postfix -p "25:25" \
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
            -e DKIM_DOMAIN=notification.vodafone.nl \
            -e DKIM_KEY=/var/db/dkim/helpdesk.mycompany.com.private \
            -e DKIM_SELECTOR=sel1 \
            -v /path/to/helpdesk.mycompany.com.private:/var/db/dkim/helpdesk.mycompany.com.private \
-           cedricroijakkers/postfix-docker:3.6.6
+           cedricroijakkers/postfix-docker:3.8.5
 
 To configure an upstream server without authentication:
 
-    docker run -d --name postfix -p "25:25"  \ 
+    docker run -d --name postfix -p "25:25" \ 
            -e SMTP_SERVER=smtp.bar.com \
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
-           cedricroijakkers/postfix-docker:3.6.6
+           cedricroijakkers/postfix-docker:3.8.5
 
 To configure an upstream server with authentication:
 
-    docker run -d --name postfix -p "25:25"  \ 
+    docker run -d --name postfix -p "25:25" \ 
            -e SMTP_SERVER=smtp.bar.com \
            -e SERVER_HOSTNAME=helpdesk.mycompany.com \
            -e SMTP_USERNAME=foo@bar.com \
            -e SMTP_PASSWORD=XXXXXXXX \
-           cedricroijakkers/postfix-docker:3.6.6
+           cedricroijakkers/postfix-docker:3.8.5
 
 # Maintainer
 This container is built and maintained by [Cedric Roijakkers](mailto:cedric@roijakkers.be).

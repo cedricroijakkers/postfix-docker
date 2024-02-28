@@ -134,6 +134,12 @@ EOF
   add_config_value "non_smtpd_milters" '$smtpd_milters'
 fi
 
+# Optional: Use a different queue directory
+if [ -n "${QUEUE_DIRECTORY}" ]
+then
+  add_config_value "queue_directory" "${QUEUE_DIRECTORY}"
+fi
+
 # Optional: if a script is set in variable ADDITIONAL_CONFIG, source and execute it
 if [ -n "${ADDITIONAL_CONFIG}" ] && [ -s "${ADDITIONAL_CONFIG}" ]
 then
